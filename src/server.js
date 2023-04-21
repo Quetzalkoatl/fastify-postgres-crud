@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 
 import { usersRoutes } from './routes/users.js';
 
-const fastify = Fastify({
+export const fastify = Fastify({
   logger: true,
 });
 
@@ -10,7 +10,7 @@ const fastify = Fastify({
 const PORT = 5000;
 
 // REGISTER USERS ROUTES
-fastify.register(usersRoutes);
+fastify.register(usersRoutes, { prefix: '/users' });
 
 //START SERVER
 const start = async () => {
