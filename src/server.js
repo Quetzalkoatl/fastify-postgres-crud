@@ -1,4 +1,6 @@
 import Fastify from 'fastify';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 
 import { usersRoutes } from './routes/users.js';
 
@@ -9,8 +11,39 @@ export const fastify = Fastify({
 //SERVER PORT
 const PORT = 5000;
 
+//REGISTER SWAGGER
+await fastify.register(fastifySwagger, {
+  swagger: {
+    info: {
+      title: 'Documentation',
+      description: 'Fastify CRUD project documentation',
+    },
+    tags: [{ name: 'User', description: 'User related end-points' }],
+    definitions: {
+      User: {
+        type: 'object',
+        required: ['id', 'name', 'status'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
+          status: { type: 'string' },
+        },
+      },
+    },
+  },
+});
+await fastify.register(fastifySwaggerUi, {
+  routePrefix: '/documentation',
+  uiConfig: {
+    docExpansion: 'list',
+    deepLinking: false,
+  },
+});
+
 // REGISTER USERS ROUTES
 fastify.register(usersRoutes, { prefix: '/users' });
+
+await fastify.ready();
 
 //START SERVER
 const start = async () => {
