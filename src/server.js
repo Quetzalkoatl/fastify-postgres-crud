@@ -1,15 +1,18 @@
 import Fastify from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import * as dotenv from 'dotenv';
 
 import { usersRoutes } from './routes/users.js';
+
+dotenv.config();
 
 export const fastify = Fastify({
   logger: true,
 });
 
 //SERVER PORT
-const PORT = 5000;
+const SERVER_PORT = process.env.SERVER_PORT || 5000;
 
 //REGISTER SWAGGER
 await fastify.register(fastifySwagger, {
@@ -46,10 +49,10 @@ fastify.register(usersRoutes, { prefix: '/users' });
 await fastify.ready();
 
 //START SERVER
-const start = async () => {
+const start = () => {
   try {
-    await fastify.listen({
-      port: PORT,
+    fastify.listen({
+      port: SERVER_PORT,
     });
   } catch (error) {
     fastify.log.error(error);

@@ -1,48 +1,51 @@
 import { v4 as uuidv4 } from 'uuid';
-
-//DEFAULT USERS
-let users = [
-  { id: '1', name: 'John', status: 'user' },
-  { id: '2', name: 'Mike', status: 'moderator' },
-  { id: '3', name: 'Timmy', status: 'admin' },
-];
+import db from '../db/db.js';
 
 //GET ALL USERS CONTROLLER
-export const getAllUsers = (req, reply) => {
-  reply.code(200).send(users);
+export const getAllUsers = async (req, reply) => {
+  const users = await db.query('SELECT * FROM users');
+
+  reply.code(200).send(users.rows);
 };
 
 //GET SINGLE USER CONTROLLER
-export const getUser = (req, reply) => {
+export const getUser = async (req, reply) => {
   const { id } = req.params;
 
-  const user = users.find(user => user.id === id);
+  const user = await db.query('SELECT * FROM users WHERE id = $1', [id]);
 
-  reply.code(200).send(user);
+  if (!user.rows[0]) {
+    reply.code(404).send({ message: 'User does not exist' });
+  }
+
+  reply.code(200).send(user.rows[0]);
 };
 
 //CREATE USER CONTROLLER
-export const createUser = (req, reply) => {
+export const createUser = async (req, reply) => {
   const { name, status } = req.body;
 
   if (!name || !status) {
     reply.code(400).send({ message: 'Bad request' });
   }
 
-  const user = { id: uuidv4(), name, status };
+  const id = uuidv4();
 
-  users.push(user);
+  const user = await db.query(
+    'INSERT INTO users (id, name, status) values($1, $2, $3) RETURNING *',
+    [id, name, status]
+  );
 
   const replyObject = {
     message: 'User has been created',
-    user,
+    user: user.rows[0],
   };
 
   reply.code(201).send(replyObject);
 };
 
 //UPDATE USER CONTROLLER
-export const updateUser = (req, reply) => {
+export const updateUser = async (req, reply) => {
   const { id } = req.params;
   const { name, status } = req.body;
 
@@ -50,41 +53,43 @@ export const updateUser = (req, reply) => {
     reply.code(400).send({ message: 'Bad request' });
   }
 
-  const user = users.find(user => user.id === id);
+  const user = await db.query('SELECT * FROM users WHERE id = $1', [id]);
 
-  if (!user) {
-    reply.code(400).send({ message: 'User does not exist' });
+  if (!user.rows[0]) {
+    reply.code(404).send({ message: 'User does not exist' });
   }
 
-  users = users.map(user =>
-    user.id === id ? { ...user, name, status } : user
+  const updatedUser = await db.query(
+    'UPDATE users set name = $1, status = $2 WHERE id = $3 RETURNING *',
+    [name, status, id]
   );
-
-  const updatedUser = users.find(user => user.id === id);
 
   const replyObject = {
     message: 'User has been updated',
-    user: updatedUser,
+    user: updatedUser.rows[0],
   };
 
   reply.code(200).send(replyObject);
 };
 
 //DELETE USER CONTROLLER
-export const deleteUser = (req, reply) => {
+export const deleteUser = async (req, reply) => {
   const { id } = req.params;
 
-  const user = users.find(user => user.id === id);
+  const user = await db.query('SELECT * FROM users WHERE id = $1', [id]);
 
-  if (!user) {
-    reply.code(400).send({ message: 'User does not exist' });
+  if (!user.rows[0]) {
+    reply.code(404).send({ message: 'User does not exist' });
   }
 
-  users = users.filter(user => user.id !== id);
+  const deletedUser = await db.query(
+    'DELETE FROM users WHERE id = $1 RETURNING *',
+    [id]
+  );
 
   const replyObject = {
     message: 'User has been deleted',
-    deletedUser: user,
+    deletedUser: deletedUser.rows[0],
   };
 
   reply.code(200).send(replyObject);
